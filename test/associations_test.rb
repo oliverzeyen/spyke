@@ -120,8 +120,17 @@ module Spyke
 
     def test_build_belongs_to_association
       recipe = Recipe.new(id: 1)
-      recipe.build_user(name: 'Alice')
-      assert_equal recipe.user.name, 'Alice'
+      user = recipe.build_user(name: 'Alice')
+      assert_equal 'Alice', recipe.user.name
+    end
+
+    def test_create_belongs_to_association
+      endpoint = stub_request(:post, 'http://sushi.com/users').with(body: { user: { name: 'Alice' } }).to_return_json(result: { id: 2, name: 'Alice (saved)' })
+      recipe = Recipe.new(id: 1)
+      recipe.create_user(name: 'Alice')
+      assert_equal 'Alice (saved)', recipe.user.name
+      assert_equal 2, recipe.user.id
+      assert_requested endpoint
     end
 
     def test_build_has_one_association
@@ -129,6 +138,14 @@ module Spyke
       image = recipe.build_image
       assert_equal 1, image.recipe_id
       assert_equal 1, recipe.image.recipe_id
+    end
+
+    def test_create_has_one_association
+      endpoint = stub_request(:post, 'http://sushi.com/recipes/1/comment').with(body: { comment: { title: 'nice!' } }).to_return_json(result: { title: 'nice (saved)' })
+      recipe = Recipe.new(id: 1)
+      comment = recipe.create_comment(title: 'nice!')
+      assert_equal 'nice (saved)', comment.title
+      assert_requested endpoint
     end
 
     def test_multiple_builds

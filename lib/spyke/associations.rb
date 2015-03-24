@@ -15,7 +15,7 @@ module Spyke
 
     module ClassMethods
       def has_many(name, options = {})
-        create_association(name, HasMany, options)
+        install_association(name, HasMany, options)
 
         define_method "#{name.to_s.singularize}_ids=" do |ids|
           attributes[name] = []
@@ -28,19 +28,13 @@ module Spyke
       end
 
       def has_one(name, options = {})
-        create_association(name, HasOne, options)
-
-        define_method "build_#{name}" do |attributes = nil|
-          association(name).build(attributes)
-        end
+        install_association(name, HasOne, options)
+        define_singular_constructors(name)
       end
 
       def belongs_to(name, options = {})
-        create_association(name, BelongsTo, options)
-
-        define_method "build_#{name}" do |attributes = nil|
-          association(name).build(attributes)
-        end
+        install_association(name, BelongsTo, options)
+        define_singular_constructors(name)
       end
 
       def accepts_nested_attributes_for(*names)
@@ -60,8 +54,20 @@ module Spyke
 
       private
 
-        def create_association(name, type, options)
+        def install_association(name, type, options)
           self.associations = associations.merge(name => Builder.new(self, name, type, options))
+        end
+
+        def define_singular_constructors(name)
+          define_method "build_#{name}" do |attributes = nil|
+            association(name).build(attributes)
+          end
+
+          define_method "create_#{name}" do |attributes = nil|
+            record = send("build_#{name}", attributes)
+            record.save
+            record
+          end
         end
     end
   end
