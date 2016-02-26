@@ -8,7 +8,14 @@ module Spyke
 
       def initialize(klass, parent, name, options = {})
         super(klass, options)
+
         @parent, @name = parent, name
+      end
+
+      class << self
+        def association_chain
+          @association_chain ||= {}
+        end
       end
 
       def load

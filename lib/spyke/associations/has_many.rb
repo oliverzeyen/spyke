@@ -3,8 +3,11 @@ module Spyke
     class HasMany < Association
       def initialize(*args)
         super
-        @options.reverse_merge!(uri: "#{parent.class.model_name.element.pluralize}/:#{foreign_key}/#{@name}/(:id)")
-        @params[foreign_key] = parent.id
+        # register assocation chain
+        register_association(parent)
+
+        # default to association chain uri
+        @options.reverse_merge!(uri: default_uri(name))
       end
 
       def load
@@ -21,6 +24,17 @@ module Spyke
       end
 
       private
+
+        # Register association foreign keys/values on class instance level and add them to @params
+        def register_association(parent)
+          self.class.association_register.merge!(foreign_key => parent.id).map { |key,value| @params[key] = value }
+        end
+
+        def default_uri(name)
+          self.class.association_register.map do |key, value|
+            "#{key.to_s.gsub('_id','').tableize}/:#{key.to_s}"
+          end.join('/') + "/#{name}/(:id)"
+        end
 
         def combine_with_existing(incoming)
           return incoming unless primary_keys_present_in_existing?
