@@ -13,8 +13,8 @@ module Spyke
       end
 
       class << self
-        def association_chain
-          @association_chain ||= {}
+        def association_register
+          @association_register ||= {}
         end
       end
 
